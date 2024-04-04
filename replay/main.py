@@ -22,7 +22,7 @@ memory_size = 100000
 replay_start_size = 10000
 total_frame = 2000000
 update = 1000
-K = 100
+K = 5
 print_interval = 1000
 
 

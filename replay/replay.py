@@ -1,4 +1,4 @@
-from sumtree import SumTree
+from segmenttree import SegmentTree
 import math
 import numpy as np
 import random
@@ -8,14 +8,14 @@ import torch
 class Replay:
     def __init__(self, max_size):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.max_size = 2**math.floor(math.log2(max_size))
-        self.memory = SumTree(self.max_size)
+        self.max_size = max_size
+        self.memory = SegmentTree(self.max_size)
 
     def __len__(self):
-        return self.memory.size
+        return self.memory.count
 
     def add(self, state, action, reward, next_state, done):
-        self.memory.add((state, action, reward, next_state, done))
+        self.memory.ins((state, action, reward, next_state, done))
 
     def transform(self, lazy_frame):
         state = torch.from_numpy(lazy_frame.__array__()[None] / 255).float()
@@ -23,11 +23,11 @@ class Replay:
 
     def update(self, idxs, errors, a):
         for _ in range(len(idxs)):
-            self.memory.update(idxs[_], (abs(errors[_]) + 1e-4)**a)
+            self.memory.recover(idxs[_], (abs(errors[_]) + 1e-4)**a)
 
     def sample(self, batch_size, beta):
         s = self.memory.get_total()
-        # print(s)
+        assert s > 0, "error on sum!"
         interval = s / batch_size
         idxs, states, actions, rewards, next_states, dones, probs = [], [], [], [], [], [], []
         for _ in range(batch_size):
